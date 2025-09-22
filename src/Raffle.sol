@@ -32,7 +32,8 @@ pragma solidity 0.8.19;
  */
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
-import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
+import {AutomationCompatibleInterface} from
+    "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
 contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     /* Errors */
@@ -44,8 +45,9 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
 
     /* Type Declarations */
     enum RaffleState {
-        OPEN,          // 0
-        CALCULATING    // 1
+        OPEN, // 0
+        CALCULATING // 1
+
     }
 
     /* Variables */
@@ -65,6 +67,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
 
     /* Events */
     event RaffleEntered(address indexed player);
+    event RequestedRaffleWinner(uint256 indexed requestId);
     event RaffleWinnerPicked(address indexed winner);
 
     /* Functions */
@@ -97,18 +100,23 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         emit RaffleEntered(msg.sender);
     }
 
-    // * @dev chainlink upkeep functions will automate the picking of a winner after the interval has passed 
+    // * @dev chainlink upkeep functions will automate the picking of a winner after the interval has passed
 
-    function checkUpkeep(bytes memory /* checkData */) public view override returns(bool upkeepNeeded, bytes memory /* performData */) {
+    function checkUpkeep(bytes memory /* checkData */ )
+        public
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory /* performData */ )
+    {
         bool timeHasPassed = ((block.timestamp - s_lastTimeStamp) > i_interval);
         bool isOpen = (s_raffleState == RaffleState.OPEN);
         bool hasBalance = address(this).balance > 0;
         bool hasPlayers = s_players.length > 0;
-        upkeepNeeded = ( timeHasPassed && isOpen && hasBalance && hasPlayers);
-        return (upkeepNeeded,"0x0");
+        upkeepNeeded = (timeHasPassed && isOpen && hasBalance && hasPlayers);
+        return (upkeepNeeded, "0x0");
     }
 
-    function performUpkeep(bytes calldata /* performData */) external override {
+    function performUpkeep(bytes calldata /* performData */ ) external override {
         (bool upkeepNeeded,) = checkUpkeep("");
         if (!upkeepNeeded) {
             revert Raffle__UpkeepNotNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
@@ -125,23 +133,25 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
             extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
         });
         uint256 requestId = s_vrfCoordinator.requestRandomWords(vrfRequest);
+
+        // This is redundant in theory because the VRF coordinator already emits an event when requestRandomWords
+        emit RequestedRaffleWinner(requestId);
     }
 
     function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
         //Checks, Effects, Interactions patterns
         uint256 indexOfWinner = randomWords[0] % s_players.length;
-        address payable recentWinner  = s_players[indexOfWinner];
+        address payable recentWinner = s_players[indexOfWinner];
         s_recentWinner = recentWinner;
         s_raffleState = RaffleState.OPEN;
         s_players = new address payable[](0);
         s_lastTimeStamp = block.timestamp;
-        emit RaffleWinnerPicked(recentWinner); 
+        emit RaffleWinnerPicked(recentWinner);
         (bool success,) = recentWinner.call{value: address(this).balance}("");
         if (!success) {
             revert Raffle__TransferFailed();
-        }    
+        }
     }
-
 
     /* Getter functions */
     function getEntranceFee() external view returns (uint256) {
