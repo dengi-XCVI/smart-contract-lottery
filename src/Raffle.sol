@@ -61,6 +61,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     uint32 private immutable i_callbackGasLimit;
 
     uint256 private s_lastTimeStamp;
+    uint256 private s_lastRandomWord;
     address payable[] private s_players;
     address private s_recentWinner;
     RaffleState private s_raffleState;
@@ -140,6 +141,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
 
     function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
         //Checks, Effects, Interactions patterns
+        s_lastRandomWord = randomWords[0];
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexOfWinner];
         s_recentWinner = recentWinner;
@@ -165,4 +167,17 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     function getRaffleState() external view returns (RaffleState) {
         return s_raffleState;
     }
+
+    function getLatestTimestamp() external view returns (uint256) {
+        return s_lastTimeStamp;
+    }
+
+    function getRecentWinner() external view returns (address) {
+        return s_recentWinner;
+    }
+
+    function getLastRandomWord() external view returns(uint256) {
+        return s_lastRandomWord;
+    }
+
 }

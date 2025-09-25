@@ -50,7 +50,7 @@ contract FundSubscription is Script, CodeConstants {
         console.log("On chain id:", block.chainid);
         if (block.chainid == ANVIL_CHAINID) {
             vm.startBroadcast();
-            VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(subscriptionId, FUND_AMOUNT);
+            VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(subscriptionId, FUND_AMOUNT * 100);
             vm.stopBroadcast();
         } else {
             vm.startBroadcast();
