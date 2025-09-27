@@ -64,7 +64,7 @@ contract HelperConfig is Script, CodeConstants {
             callbackGasLimit: 500000, // 500,000 gas
             link: 0x779877A7B0D9E8603169DdbD7836e478b4624789,
             // test2 account
-            account:0xd74129d201b1E1C25236dC442C3e20C9c5259341
+            account:0xd74129d201b1E1C25236dC442C3e20C9c5259341 
         });
     }
 
